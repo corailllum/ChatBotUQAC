@@ -16,3 +16,14 @@ Toute ces étapes sont gérer dans le dossier : scrapping. voir readme du dossie
 ### étapes 2 :
 
 
+
+
+
+
+### étape x : 
+
+Lancer le chatbot 
+```
+streamlit run rag_chatbot.py
+```
+
