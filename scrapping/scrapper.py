@@ -3,8 +3,16 @@ Scraper pour le Manuel de Gestion UQAC
 Ce script récupère le contenu des pages HTML et PDF du site de l'UQAC
 et les stocke dans une base de données vectorielle pour le RAG
 """
+import sys
+from pathlib import Path
 
+# ajouter la racine du projet au PYTHONPATH
+ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT_DIR))
+
+import RAG.config as config
 import os
+import sys
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -12,22 +20,13 @@ import tempfile
 import time
 from typing import List, Dict
 from pypdf import PdfReader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.schema import Document
-from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import GPT4AllEmbeddings
+from langchain_ollama import OllamaEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
+from langchain_chroma import Chroma
+import RAG.config as config
+import re
 
-# ==========================================
-# PARTIE 1 : CONFIGURATION
-# ==========================================
-
-class Config:
-    """Configuration du scraper"""
-    BASE_URL = "https://www.uqac.ca/mgestion/"
-    MAX_PAGES = 250  # Limite pour ne pas surcharger le serveur
-    CHUNK_SIZE = 1000  # Taille des morceaux de texte
-    CHUNK_OVERLAP = 200  # Chevauchement entre les morceaux
-    PERSIST_DIRECTORY = "./chroma_db"  # Où sauvegarder la base de données
 
 
 # ==========================================
@@ -181,71 +180,6 @@ class PDFScraper:
             return None
 
 
-# ==========================================
-# PARTIE 4 : STOCKAGE DANS LA BASE VECTORIELLE
-# ==========================================
-
-class VectorStore:
-    """Classe pour gérer le stockage dans ChromaDB"""
-    
-    def __init__(self, persist_directory: str):
-        self.persist_directory = persist_directory
-        
-        # Initialise les embeddings avec GPT4All (modèle local)
-        print(" Chargement du modèle d'embeddings...")
-        self.embeddings = GPT4AllEmbeddings()
-        
-        # Initialise le text splitter
-        self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=Config.CHUNK_SIZE,
-            chunk_overlap=Config.CHUNK_OVERLAP,
-            length_function=len,
-        )
-        
-        # Charge ou crée la base de données
-        self.vectorstore = None
-    
-    def add_documents(self, scraped_data: List[Dict[str, str]]):
-        """
-        Ajoute les documents scrapés à la base vectorielle
-        
-        Args:
-            scraped_data: Liste des documents scrapés
-        """
-        documents = []
-        
-        for data in scraped_data:
-            if data and data['content']:
-                # Découpe le texte en morceaux
-                chunks = self.text_splitter.split_text(data['content'])
-                
-                # Crée des documents LangChain
-                for i, chunk in enumerate(chunks):
-                    doc = Document(
-                        page_content=chunk,
-                        metadata={
-                            'source': data['url'],
-                            'title': data['title'],
-                            'type': data['type'],
-                            'chunk': i
-                        }
-                    )
-                    documents.append(doc)
-        
-        print(f" Création de {len(documents)} morceaux de texte...")
-        
-        # Crée ou met à jour la base vectorielle
-        if self.vectorstore is None:
-            self.vectorstore = Chroma.from_documents(
-                documents=documents,
-                embedding=self.embeddings,
-                persist_directory=self.persist_directory
-            )
-        else:
-            self.vectorstore.add_documents(documents)
-        
-        print(f" Documents ajoutés à la base de données!")
-
 
 # ==========================================
 # PARTIE 5 : ORCHESTRATION PRINCIPALE
@@ -255,12 +189,14 @@ class ManuelScraperPipeline:
     """Pipeline complet de scraping et stockage"""
     
     def __init__(self):
-        self.html_scraper = HTMLScraper(Config.BASE_URL)
+        self.html_scraper = HTMLScraper(config.BASE_URL)
         self.pdf_scraper = PDFScraper()
-        self.vector_store = VectorStore(Config.PERSIST_DIRECTORY)
+        self.embeddings = OllamaEmbeddings(model=config.EMBEDDING_MODEL)
+        self.vector_store = Chroma(embedding_function=self.embeddings, persist_directory=config.PERSIST_DIRECTORY)
         self.scraped_data = []
+        self.chunks = []
     
-    def scrape_all(self, start_url: str, max_pages: int = Config.MAX_PAGES):
+    def scrape_all(self, start_url: str, max_pages: int = config.MAX_PAGES):
         """
         Lance le scraping complet
         
@@ -310,26 +246,101 @@ class ManuelScraperPipeline:
         
         print("-" * 50)
         print(f" Scraping terminé! {len(self.scraped_data)} documents collectés")
+        
+    def convert_data(self):
+        print("\nConversion des données en documents")
+        documents = []
+        for item in self.scraped_data:
+            print(f" Converti : {item}")
+            if item and item.get('content'):
+                doc = Document(
+                    page_content=item['content'],
+                    metadata={
+                        'title': item['title'],
+                        'url': item['url'],
+                        'type': item['type']
+                    }
+                )
+                documents.append(doc)
+        print(f"{len(documents)} documents convertis")
+        return documents
     
+    def split_by_sections(self):
+        print("\n Découpage des documents en sections")
+
+        documents = self.convert_data()
+
+        # Utilise le text splitter de LangChain pour garantir la taille
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=config.CHUNK_SIZE,
+            chunk_overlap=config.CHUNK_OVERLAP,
+            length_function=len,
+            separators=["\n\n", "\n", " ", ""]
+        )
+
+        all_chunks = []
+        for doc in documents:
+            # Découpe d'abord par sections si possible
+            text = doc.page_content
+            sections = re.split(
+                r"\n(?=\d+\.\s|\n\d+\.\d+\.\s)",  # Regex du titre
+                text
+            )
+            for section in sections:
+                section = section.strip()
+                if len(section) > 100:  # évite les titres seuls
+                    if len(section) > config.CHUNK_SIZE:
+                        # Subdivise avec le text splitter
+                        sub_chunks = text_splitter.create_documents(
+                            [section],
+                            metadatas=[doc.metadata]
+                        )
+                        all_chunks.extend(sub_chunks)
+                    else:
+                        all_chunks.append(
+                            Document(
+                                page_content=section,
+                                metadata=doc.metadata
+                            )
+                        )
+        self.chunks = all_chunks
+        print(f"\n {len(self.chunks)} sections créées")
+
+        max_length = max(len(chunk.page_content) for chunk in self.chunks)
+        print(f"Taille maximale des chunks: {max_length} caractères")
+
     def store_data(self):
         """Stocke les données dans la base vectorielle"""
         print("\n Stockage des données dans ChromaDB...")
-        self.vector_store.add_documents(self.scraped_data)
+
+        if not self.chunks:
+            print("\n Aucun chunk à stocker !")
+            return
+
+        # Filtre les chunks vides ou trop petits
+        valid_chunks = [
+            chunk for chunk in self.chunks
+            if chunk.page_content and len(chunk.page_content.strip()) > 50
+        ]
+        print(f"{len(valid_chunks)} chunks valides sur {len(self.chunks)}")
+
+        self.vector_store.add_documents(valid_chunks)
         print(" Stockage terminé!")
     
     def run(self):
         """Lance le pipeline complet"""
-        self.scrape_all(Config.BASE_URL)
+        self.scrape_all(config.BASE_URL)
+        self.split_by_sections()
         self.store_data()
         
         print("\n" + "=" * 50)
         print(" PIPELINE TERMINÉ!")
-        print(f" Base de données sauvegardée dans: {Config.PERSIST_DIRECTORY}")
+        print(f" Base de données sauvegardée dans: {config.PERSIST_DIRECTORY}")
         print("=" * 50)
 
 
 # ==========================================
-# POINT D'ENTRÉE
+# MAIN
 # ==========================================
 
 if __name__ == "__main__":

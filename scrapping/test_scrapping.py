@@ -4,6 +4,7 @@ Script de test pour vérifier le scraper avant le lancement complet
 
 from scrapper import HTMLScraper, PDFScraper, Config
 
+
 def test_html_scraping():
     """Test du scraping d'une page HTML"""
     print("\n TEST 1: Scraping d'une page HTML")
@@ -63,3 +64,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 50)
     print(" Tests terminés!")
     print("=" * 50)
+    vectorstore = Chroma(
+                embedding=gpt4all_embeddings,
+                persist_directory=self.persist_directory
+            )
