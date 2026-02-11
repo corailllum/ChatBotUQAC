@@ -8,7 +8,7 @@
 **Marie Howet**
 
 ## But du projet :
-Le but est de mettre en place un chatbot fonctionnel pour répondre aux questions portant sur le manuel de l'UQAC. Ce README a pour but d'expliquée les différents choix de conception ainsi que l'architecture choisi. Il detaillera aussi different étapes du projet. d'autre readme seront présent dans les dossiers afin d'expliquée l'utilisation de chaque partie
+Le but de ce projet est de mettre en place un chatbot fonctionnel afin répondre à des questions d'usagers portant sur le manuel de l'UQAC. Ce README à pour but d'expliquer les différents choix de conception ainsi que l'architecture choisie. Il detaillera également les differentes étapes du projet et la façon de lancer le chatbot. D'autre ReadMe sont présents dans les différents dossiers afin d'expliquer le fonctionnement de chaque partie.
 
 ## Technologie utilisées :
 - **Librairies :** LangChain, tempfile, Streamlit 
@@ -16,23 +16,40 @@ Le but est de mettre en place un chatbot fonctionnel pour répondre aux question
 - **Modèles :** Ollama
 
 ## Organisation du Git : 
-Le git est séparé en plusieurs dossier dont nous allons expliquées le rôle ici :
-- **Data** : le dossier data est la pour contenir toute la base de donnée mis en place avec chroma. 
-- **RAG** : le dossier RAG contient les les fichier pour l'interface du CHATBOT ainsi que le model LLM
-- **scrapping** : Le dossier scraping contient tous les fichier relative a la collecte et a la sauvegarde des données relative au manuel de l'uqac
+Ce GitHub est séparé en plusieurs dossiers dont nous allons expliquer le rôle ici :
+- **Data** : le dossier data sert à contenir toute la base de donnée mise en place avec chroma. 
+- **RAG** : le dossier RAG contient les fichiers servant pour l'interface du CHATBOT ainsi que le model LLM
+- **scrapping** : Le dossier scraping contient tous les fichiers relatifs à la collecte et à la sauvegarde des données relatives au manuel de l'UQAC
 
 ### Lancement du chat bot : 
-Pour lancée le Chatbot veuillez suivre les commande suivante :
+Pour lancer le Chatbot veuillez suivre les instructions suivantes :
 
-#### prérequis
-Avoir pip d'installée (permet de suivre plus aisément les commande bash) ainsi que ollama
+#### Prérequis
+Avoir pip d'installer (permet de suivre plus aisément les commande bash) ainsi que ollama.
+
+#### Pour installer Ollama si ce n'est pas fait
+
+Sous Linux
+```
+curl -fsSL https://ollama.ai/install.sh | sh
+```
+
+Sous MacOS
+```
+brew install ollama
+```
+
+Sous Windows
+- Télécharger directement via le site https://ollama.ai/download
+
+Ensuite
 
 Dans un premier temps, lancer la commande suivante : 
 ```
  pip install -r requirements.txt  
 
 ```
-Ensuite, démarrer le serveur ollama avec cette commande 
+Ensuite, démarrer le serveur Ollama avec cette commande 
 ```
 ollama serve
 ```
