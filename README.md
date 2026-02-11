@@ -11,9 +11,9 @@
 Le but est de mettre en place un chatbot fonctionnel pour répondre aux questions portant sur le manuel de l'UQAC. Ce README a pour but d'expliquée les différents choix de conception ainsi que l'architecture choisi. Il detaillera aussi different étapes du projet. d'autre readme seront présent dans les dossiers afin d'expliquée l'utilisation de chaque partie
 
 ## Technologie utilisées :
-- **Librairies :** LangGraph, LangChain, Python LangGraph, tempfile, Streamlit 
+- **Librairies :** LangChain, tempfile, Streamlit 
 - **Techniques :** RAG, webscrapping 
-- **Modèles :** GPT4ALL (https://www.nomic.ai/gpt4all), Ollama
+- **Modèles :** Ollama
 
 ## Organisation du Git : 
 Le git est séparé en plusieurs dossier dont nous allons expliquées le rôle ici :
@@ -27,22 +27,22 @@ Pour lancée le Chatbot veuillez suivre les commande suivante :
 #### prérequis
 Avoir pip d'installée (permet de suivre plus aisément les commande bash) ainsi que ollama
 
-dans un premier temps lancée la commende suivante : 
+Dans un premier temps, lancer la commande suivante : 
 ```
  pip install -r requirements.txt  
 
 ```
-ensuite, démarrer le serveure ollama avec cette commande 
+Ensuite, démarrer le serveur ollama avec cette commande 
 ```
 ollama serve
 ```
-installer les modèles ollama nécéssaire :
+Installer les modèles Ollama nécéssaire :
 ```
 ollama pull llama3.2
 ollama pull nomic-embed-text
 ```
-Dans un autre terminal lancée la commande suivante puis suiver le lien donné en console
+Dans un autre terminal, lancer la commande suivante puis suivre le lien donné en console
 ```
-streamlit run rag_chatbot.py
+streamlit run RAG/rag_chatbot.py
 ```
 

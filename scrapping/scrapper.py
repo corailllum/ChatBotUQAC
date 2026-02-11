@@ -10,9 +10,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-import RAG.config as config
 import os
-import sys
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -30,7 +28,7 @@ import re
 
 
 # ==========================================
-# PARTIE 2 : SCRAPING DES PAGES HTML
+# SCRAPING DES PAGES HTML
 # ==========================================
 
 class HTMLScraper:
@@ -122,7 +120,7 @@ class HTMLScraper:
 
 
 # ==========================================
-# PARTIE 3 : SCRAPING DES PDF
+# SCRAPING DES PDF
 # ==========================================
 
 class PDFScraper:
@@ -182,9 +180,8 @@ class PDFScraper:
 
 
 # ==========================================
-# PARTIE 5 : ORCHESTRATION PRINCIPALE
+# ORCHESTRATION PRINCIPALE
 # ==========================================
-
 class ManuelScraperPipeline:
     """Pipeline complet de scraping et stockage"""
     
@@ -266,7 +263,7 @@ class ManuelScraperPipeline:
         return documents
     
     def split_by_sections(self):
-        print("\n Découpage des documents en sections")
+        print("\nDécoupage des documents en sections")
 
         documents = self.convert_data()
 
@@ -325,7 +322,7 @@ class ManuelScraperPipeline:
         print(f"{len(valid_chunks)} chunks valides sur {len(self.chunks)}")
 
         self.vector_store.add_documents(valid_chunks)
-        print(" Stockage terminé!")
+        print("Stockage terminé!")
     
     def run(self):
         """Lance le pipeline complet"""
@@ -342,7 +339,6 @@ class ManuelScraperPipeline:
 # ==========================================
 # MAIN
 # ==========================================
-
 if __name__ == "__main__":
     print("""
           SCRAPER MANUEL DE GESTION UQAC

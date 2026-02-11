@@ -7,7 +7,7 @@ from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import OllamaLLM, OllamaEmbeddings
 import streamlit as st
-import RAG.config as config
+import config
 
 # ========================
 # 1. INTERFACE
@@ -25,6 +25,12 @@ with st.sidebar:
         max_value=10,
         value=4,
         help="Plus de sources = plus de contexte mais temps de réponse plus long"
+    )
+
+    use_memory = st.checkbox(
+        "Activer la mémoire contextuelle",
+        value=True,
+        help="Le chatbot se souviendra des questions précédentes"
     )
 
     if st.button("🗑️ Effacer l'historique"):
@@ -46,13 +52,12 @@ def init_components():
     llm = OllamaLLM(model=config.LLM_MODEL, temperature=0.2)
     return embeddings, vectorstore, llm
 
-
 embeddings, vectorstore, llm = init_components()
 
 # ========================
 # 3. FONCTION RAG AVEC MÉMOIRE
 # ========================
-def get_rag_response(question: str, k: int = 4):
+def get_rag_response(question: str, k: int = 4, use_memory: bool = True):
     """
     Génère une réponse en utilisant RAG avec mémoire contextuelle optionnelle
 
@@ -76,7 +81,7 @@ def get_rag_response(question: str, k: int = 4):
 
     # Construire l'historique de conversation
     conversation_history = ""
-    if "conversation_context" in st.session_state:
+    if use_memory and "conversation_context" in st.session_state:
         recent_exchanges = st.session_state.conversation_context[-3:]  # 3 derniers échanges
         if recent_exchanges:
             conversation_history = "\n\nHistorique récent de la conversation:\n"
@@ -85,7 +90,7 @@ def get_rag_response(question: str, k: int = 4):
                 conversation_history += f"R: {exchange['answer']}\n\n"
 
     # Créer le prompt avec ou sans mémoire
-    if conversation_history:
+    if use_memory and conversation_history:
         template = """Tu es un assistant spécialisé dans les politiques et procédures de l'UQAC.
                     Réponds en te basant sur le contexte fourni et l'historique de la conversation.
                     Si l'information n'est pas dans le contexte, dis-le clairement.
@@ -158,7 +163,7 @@ for message in st.session_state.messages:
 
                     # Afficher un extrait du contenu
                     preview = doc.page_content[:200].replace('\n', ' ')
-                    st.text(f"   {preview}...")
+                    st.text(f"*Extrait : {preview}...*")
                     st.divider()
 
 # ========================
@@ -174,7 +179,7 @@ if prompt := st.chat_input("Votre question sur le manuel de gestion..."):
     # Générer et afficher la réponse
     with st.chat_message("assistant"):
         with st.spinner("🔍 Recherche dans le manuel de gestion..."):
-            result = get_rag_response(prompt, k=k_sources)
+            result = get_rag_response(prompt, k=k_sources, use_memory=use_memory)
             answer = result["answer"]
             sources = result["sources"]
 
@@ -190,7 +195,7 @@ if prompt := st.chat_input("Votre question sur le manuel de gestion..."):
 
                     # Afficher un extrait du contenu
                     preview = doc.page_content[:200].replace('\n', ' ')
-                    st.text(f"   {preview}...")
+                    st.text(f"Extrait : {preview}...")
                     st.divider()
 
     # Sauvegarder la réponse avec les sources dans l'historique

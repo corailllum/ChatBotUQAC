@@ -14,9 +14,3 @@ PERSIST_DIRECTORY = "./data/chroma_db"  # Où sauvegarder la base de données
 EMBEDDING_MODEL = "nomic-embed-text"
 
 LLM_MODEL = "llama3.2"
-AVAILABLE_MODELS = [
-    "llama3.2",
-    "llama3.1",
-    "mistral",
-    "gemma2"
-]
