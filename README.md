@@ -40,7 +40,7 @@ brew install ollama
 ```
 
 Sous Windows
-- Télécharger directement via le site https://ollama.ai/download
+- Télécharger directement via le site https://ollama.com/download
 
 Ensuite
 
