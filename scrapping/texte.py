@@ -5,7 +5,7 @@ Script de diagnostic pour tester les liens PDF du site UQAC
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-import RAG.config as config
+import config as config
 
 def test_pdf_links():
     """Teste si des liens PDF existent sur le site UQAC"""

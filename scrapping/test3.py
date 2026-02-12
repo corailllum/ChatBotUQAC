@@ -12,6 +12,7 @@ import sys
 # ajouter la racine du projet au PYTHONPATH
 ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
+
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -23,7 +24,7 @@ from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
-import RAG.config as config
+import config as config
 
 
 # ==========================================

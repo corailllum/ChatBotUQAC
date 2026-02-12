@@ -6,9 +6,9 @@ et les stocke dans une base de données vectorielle pour le RAG
 import sys
 from pathlib import Path
 
-# ajouter la racine du projet au PYTHONPATH
-ROOT_DIR = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT_DIR))
+# Ajouter le répertoire racine au path Python
+root_path = Path(__file__).parent.parent
+sys.path.insert(0, str(root_path))
 
 import os
 import requests
@@ -22,14 +22,14 @@ from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
-import RAG.config as config
 import re
-
-
+from config import BASE_URL, EMBEDDING_MODEL, PERSIST_DIRECTORY, MAX_PAGES, CHUNK_SIZE, CHUNK_OVERLAP
 
 # ==========================================
 # SCRAPING DES PAGES HTML
 # ==========================================
+
+
 
 class HTMLScraper:
     """Classe pour scraper les pages HTML du manuel UQAC"""
@@ -186,14 +186,14 @@ class ManuelScraperPipeline:
     """Pipeline complet de scraping et stockage"""
     
     def __init__(self):
-        self.html_scraper = HTMLScraper(config.BASE_URL)
+        self.html_scraper = HTMLScraper(BASE_URL)
         self.pdf_scraper = PDFScraper()
-        self.embeddings = OllamaEmbeddings(model=config.EMBEDDING_MODEL)
-        self.vector_store = Chroma(embedding_function=self.embeddings, persist_directory=config.PERSIST_DIRECTORY)
+        self.embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
+        self.vector_store = Chroma(embedding_function=self.embeddings, persist_directory=PERSIST_DIRECTORY)
         self.scraped_data = []
         self.chunks = []
     
-    def scrape_all(self, start_url: str, max_pages: int = config.MAX_PAGES):
+    def scrape_all(self, start_url: str, max_pages: int = MAX_PAGES):
         """
         Lance le scraping complet
         
@@ -269,8 +269,8 @@ class ManuelScraperPipeline:
 
         # Utilise le text splitter de LangChain pour garantir la taille
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=config.CHUNK_SIZE,
-            chunk_overlap=config.CHUNK_OVERLAP,
+            chunk_size=CHUNK_SIZE,
+            chunk_overlap=CHUNK_OVERLAP,
             length_function=len,
             separators=["\n\n", "\n", " ", ""]
         )
@@ -286,7 +286,7 @@ class ManuelScraperPipeline:
             for section in sections:
                 section = section.strip()
                 if len(section) > 100:  # évite les titres seuls
-                    if len(section) > config.CHUNK_SIZE:
+                    if len(section) > CHUNK_SIZE:
                         # Subdivise avec le text splitter
                         sub_chunks = text_splitter.create_documents(
                             [section],
@@ -326,13 +326,13 @@ class ManuelScraperPipeline:
     
     def run(self):
         """Lance le pipeline complet"""
-        self.scrape_all(config.BASE_URL)
+        self.scrape_all(BASE_URL)
         self.split_by_sections()
         self.store_data()
         
         print("\n" + "=" * 50)
         print(" PIPELINE TERMINÉ!")
-        print(f" Base de données sauvegardée dans: {config.PERSIST_DIRECTORY}")
+        print(f" Base de données sauvegardée dans: {PERSIST_DIRECTORY}")
         print("=" * 50)
 
 

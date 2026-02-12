@@ -2,12 +2,19 @@
 Chatbot RAG - Version corrigée
 Posez vos questions sur le Manuel de Gestion UQAC
 """
+import sys
+from pathlib import Path
+
+# Ajouter le répertoire racine au path Python
+root_path = Path(__file__).parent.parent
+sys.path.insert(0, str(root_path))
 
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import OllamaLLM, OllamaEmbeddings
 import streamlit as st
-import config
+from config import EMBEDDING_MODEL, PERSIST_DIRECTORY, LLM_MODEL
+
 
 # ========================
 # 1. INTERFACE
@@ -44,12 +51,12 @@ with st.sidebar:
 @st.cache_resource
 def init_components():
     """Initialise les composants (embeddings, vectorstore, LLM)"""
-    embeddings = OllamaEmbeddings(model=config.EMBEDDING_MODEL)
+    embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
     vectorstore = Chroma(
-        persist_directory=config.PERSIST_DIRECTORY,
+        persist_directory=PERSIST_DIRECTORY,
         embedding_function=embeddings
     )
-    llm = OllamaLLM(model=config.LLM_MODEL, temperature=0.2)
+    llm = OllamaLLM(model=LLM_MODEL, temperature=0.2)
     return embeddings, vectorstore, llm
 
 embeddings, vectorstore, llm = init_components()
@@ -221,8 +228,8 @@ if prompt := st.chat_input("Votre question sur le manuel de gestion..."):
 st.divider()
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.metric("🤖 Modèle LLM", config.LLM_MODEL)
+    st.metric("🤖 Modèle LLM", LLM_MODEL)
 with col2:
-    st.metric("🧠 Modèle Embeddings", config.EMBEDDING_MODEL)
+    st.metric("🧠 Modèle Embeddings", EMBEDDING_MODEL)
 with col3:
     st.metric("💬 Messages", len(st.session_state.messages))
